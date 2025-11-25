@@ -8,7 +8,7 @@ import sys
 import os
 
 # Add shared directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '../_shared'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '_shared'))
 
 from db import get_db_connection
 from psycopg2.extras import RealDictCursor
