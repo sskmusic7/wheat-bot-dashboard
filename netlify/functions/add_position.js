@@ -51,15 +51,10 @@ exports.handler = async (event) => {
         const newPortfolio = newCash + totalPositionValue;
         const currentDate = new Date().toISOString().slice(0, 10);
 
+        await sql`DELETE FROM performance WHERE date = ${currentDate}`;
         await sql`
             INSERT INTO performance (date, source, cash_balance, portfolio_value, total_pnl, daily_return)
             VALUES (${currentDate}, ${source}, ${newCash}, ${newPortfolio}, 0, 0)
-            ON CONFLICT (date) DO UPDATE SET
-                cash_balance = excluded.cash_balance,
-                portfolio_value = excluded.portfolio_value,
-                total_pnl = excluded.total_pnl,
-                daily_return = excluded.daily_return,
-                source = excluded.source
         `;
 
         return jsonResponse(200, {
