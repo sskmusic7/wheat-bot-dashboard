@@ -1,0 +1,26 @@
+const { requireSql } = require('./_shared/db');
+const { jsonResponse, handleOptions } = require('./_shared/response');
+
+exports.handler = async (event) => {
+    if (event.httpMethod === 'OPTIONS') return handleOptions();
+
+    try {
+        const sql = requireSql();
+        const params = event.queryStringParameters || {};
+        const limit = Number(params.limit || 50);
+        const symbol = params.symbol;
+
+        const rows = await sql`
+            SELECT * FROM signals
+            WHERE 1=1
+            ${symbol ? sql`AND symbol = ${symbol}` : sql``}
+            ORDER BY signal_date DESC
+            LIMIT ${limit}
+        `;
+
+        return jsonResponse(200, { success: true, data: rows });
+    } catch (error) {
+        console.error('signals error', error);
+        return jsonResponse(500, { success: false, error: error.message });
+    }
+};
