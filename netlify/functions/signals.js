@@ -10,13 +10,21 @@ exports.handler = async (event) => {
         const limit = Number(params.limit || 50);
         const symbol = params.symbol;
 
-        const rows = await sql`
-            SELECT * FROM signals
-            WHERE 1=1
-            ${symbol ? sql`AND symbol = ${symbol}` : sql``}
-            ORDER BY signal_date DESC
-            LIMIT ${limit}
-        `;
+        let rows;
+        if (symbol) {
+            rows = await sql`
+                SELECT * FROM signals 
+                WHERE symbol = ${symbol} 
+                ORDER BY signal_date DESC 
+                LIMIT ${limit}
+            `;
+        } else {
+            rows = await sql`
+                SELECT * FROM signals 
+                ORDER BY signal_date DESC 
+                LIMIT ${limit}
+            `;
+        }
 
         return jsonResponse(200, { success: true, data: rows });
     } catch (error) {

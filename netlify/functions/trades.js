@@ -11,14 +11,35 @@ exports.handler = async (event) => {
         const symbol = params.symbol;
         const source = params.source;
 
-        const rows = await sql`
-            SELECT * FROM trades
-            WHERE 1=1
-            ${symbol ? sql`AND symbol = ${symbol}` : sql``}
-            ${source ? sql`AND source = ${source}` : sql``}
-            ORDER BY exit_date DESC
-            LIMIT ${limit}
-        `;
+        let rows;
+        if (symbol && source) {
+            rows = await sql`
+                SELECT * FROM trades 
+                WHERE symbol = ${symbol} AND source = ${source} 
+                ORDER BY exit_date DESC 
+                LIMIT ${limit}
+            `;
+        } else if (symbol) {
+            rows = await sql`
+                SELECT * FROM trades 
+                WHERE symbol = ${symbol} 
+                ORDER BY exit_date DESC 
+                LIMIT ${limit}
+            `;
+        } else if (source) {
+            rows = await sql`
+                SELECT * FROM trades 
+                WHERE source = ${source} 
+                ORDER BY exit_date DESC 
+                LIMIT ${limit}
+            `;
+        } else {
+            rows = await sql`
+                SELECT * FROM trades 
+                ORDER BY exit_date DESC 
+                LIMIT ${limit}
+            `;
+        }
 
         return jsonResponse(200, { success: true, data: rows });
     } catch (error) {

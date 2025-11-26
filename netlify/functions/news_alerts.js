@@ -10,20 +10,33 @@ exports.handler = async (event) => {
         const limit = Number(params.limit || 50);
         const unreadOnly = params.unread_only === 'true';
 
-        const rows = await sql`
-            SELECT * FROM news_alerts
-            WHERE 1=1
-            ${unreadOnly ? sql`AND is_read = FALSE` : sql``}
-            ORDER BY received_at DESC
-            LIMIT ${limit}
-        `;
+        let rows;
+        if (unreadOnly) {
+            rows = await sql`
+                SELECT * FROM news_alerts 
+                WHERE is_read = FALSE 
+                ORDER BY received_at DESC 
+                LIMIT ${limit}
+            `;
+        } else {
+            rows = await sql`
+                SELECT * FROM news_alerts 
+                ORDER BY received_at DESC 
+                LIMIT ${limit}
+            `;
+        }
 
-        const unread = await sql`SELECT COUNT(*) AS count FROM news_alerts WHERE is_read = FALSE`;
+        const unreadResult = await sql`
+            SELECT COUNT(*)::int AS count 
+            FROM news_alerts 
+            WHERE is_read = FALSE
+        `;
+        const unread = unreadResult;
 
         return jsonResponse(200, {
             success: true,
             data: rows,
-            unread_count: Number(unread[0].count || 0)
+            unread_count: Number(unread[0]?.count || 0)
         });
     } catch (error) {
         console.error('news_alerts error', error);
