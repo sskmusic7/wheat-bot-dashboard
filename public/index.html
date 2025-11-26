@@ -655,14 +655,15 @@
                     html += '</tr></thead><tbody>';
 
                     result.data.forEach(sig => {
+                        if (!sig || !sig.signal) return; // Skip invalid signals
                         const badgeClass = sig.signal.toLowerCase();
                         html += '<tr>';
                         html += `<td>${new Date(sig.signal_date).toLocaleDateString()}</td>`;
-                        html += `<td><strong>${sig.symbol}</strong></td>`;
+                        html += `<td><strong>${sig.symbol || 'N/A'}</strong></td>`;
                         html += `<td><span class="badge badge-${badgeClass}">${sig.signal}</span></td>`;
-                        html += `<td class="${sig.predicted_change >= 0 ? 'positive' : 'negative'}">${(sig.predicted_change * 100).toFixed(2)}%</td>`;
-                        html += `<td>$${sig.current_price.toFixed(2)}</td>`;
-                        html += `<td>${sig.justification.substring(0, 80)}...</td>`;
+                        html += `<td class="${(sig.predicted_change || 0) >= 0 ? 'positive' : 'negative'}">${((sig.predicted_change || 0) * 100).toFixed(2)}%</td>`;
+                        html += `<td>$${(sig.current_price || 0).toFixed(2)}</td>`;
+                        html += `<td>${(sig.justification || '').substring(0, 80)}...</td>`;
                         html += '</tr>';
                     });
 
@@ -1259,14 +1260,17 @@
             `;
             
             try {
-                const response = await fetch('/.netlify/functions/run_wheat_bot', {
+                // Trigger the bot (runs locally, just acknowledges)
+                await fetch('/.netlify/functions/run_wheat_bot', {
                     method: 'POST'
                 });
                 
-                const result = await response.json();
+                // Get the latest signal from the database
+                const signalResponse = await fetch('/.netlify/functions/signals?limit=1');
+                const signalResult = await signalResponse.json();
                 
-                if (result.success) {
-                    const data = result.data;
+                if (signalResult.success && signalResult.data && signalResult.data.length > 0) {
+                    const data = signalResult.data[0];
                     const signalEmoji = data.signal === 'BUY' ? '🟢' : data.signal === 'SELL' ? '🔴' : '⚪';
                     const changeClass = data.predicted_change >= 0 ? 'positive' : 'negative';
                     
@@ -1277,17 +1281,17 @@
                             <div style="font-size: 0.9em; color: #666; margin-bottom: 10px;">WEAT Current Price</div>
                             <div style="font-size: 2em; font-weight: bold; margin-bottom: 10px;">$${data.current_price.toFixed(2)}</div>
                             <div class="${changeClass}" style="font-size: 1.2em;">
-                                Predicted: ${data.predicted_change_pct >= 0 ? '+' : ''}${data.predicted_change_pct.toFixed(2)}%
+                                Predicted: ${(data.predicted_change * 100 >= 0 ? '+' : '')}${(data.predicted_change * 100).toFixed(2)}%
                             </div>
                         </div>
                         
                         <div style="margin-bottom: 20px;">
                             <h3 style="margin-bottom: 10px;">📊 Analysis</h3>
                             <table style="width: 100%; font-size: 0.9em;">
-                                <tr><td style="padding: 5px 0; color: #666;">Model Accuracy:</td><td style="text-align: right; font-weight: 600;">${data.accuracy.toFixed(1)}%</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Drought Index:</td><td style="text-align: right;">${data.factors.drought_index.toFixed(2)}/10</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Shipping Index:</td><td style="text-align: right;">${data.factors.shipping_index.toFixed(2)}/10</td></tr>
-                                <tr><td style="padding: 5px 0; color: #666;">Soybean Change:</td><td style="text-align: right;">${(data.factors.soybean_change * 100).toFixed(2)}%</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666;">Model Accuracy:</td><td style="text-align: right; font-weight: 600;">${((data.confidence || 0) * 100).toFixed(1)}%</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666;">Drought Index:</td><td style="text-align: right;">${(data.factors?.drought_index || 0).toFixed(2)}/10</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666;">Shipping Index:</td><td style="text-align: right;">${(data.factors?.shipping_index || 0).toFixed(2)}/10</td></tr>
+                                <tr><td style="padding: 5px 0; color: #666;">Soybean Change:</td><td style="text-align: right;">${((data.factors?.soybean_change || 0) * 100).toFixed(2)}%</td></tr>
                             </table>
                         </div>
                         
@@ -1345,8 +1349,12 @@
                     
                 } else {
                     document.getElementById('wheatBotContent').innerHTML = `
-                        <h2 style="color: #ef4444;">Error</h2>
-                        <p>${result.error}</p>
+                        <h2 style="color: #ef4444;">No Signal Found</h2>
+                        <p>The Wheat Bot runs locally on your computer. Run it there to generate signals.</p>
+                        <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                            To run locally:<br>
+                            <code style="background: #f0f0f0; padding: 5px; border-radius: 3px;">cd "Trading Bot" && python3 run_wheat_bot_with_notifications.py</code>
+                        </p>
                         <button class="btn" onclick="hideWheatBotModal()">Close</button>
                     `;
                 }
