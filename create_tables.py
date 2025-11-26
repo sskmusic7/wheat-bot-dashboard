@@ -137,6 +137,27 @@ def create_tables():
             )
         ''')
         
+        # Strategy stats table
+        print("  - Creating strategy_stats table...")
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS strategy_stats (
+                id SERIAL PRIMARY KEY,
+                strategy_name TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                total_trades INTEGER DEFAULT 0,
+                winning_trades INTEGER DEFAULT 0,
+                losing_trades INTEGER DEFAULT 0,
+                total_pnl REAL DEFAULT 0,
+                avg_win REAL DEFAULT 0,
+                avg_loss REAL DEFAULT 0,
+                win_rate REAL DEFAULT 0,
+                sharpe_ratio REAL DEFAULT 0,
+                max_drawdown REAL DEFAULT 0,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(strategy_name, symbol)
+            )
+        ''')
+        
         conn.commit()
         cursor.close()
         conn.close()
@@ -159,3 +180,23 @@ if __name__ == '__main__':
         print("\n⚠️  Database setup incomplete.")
         print("   Please check your connection string and try again.")
 
+        # Strategy stats table
+        print("  - Creating strategy_stats table...")
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS strategy_stats (
+                id SERIAL PRIMARY KEY,
+                strategy_name TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                total_trades INTEGER DEFAULT 0,
+                winning_trades INTEGER DEFAULT 0,
+                losing_trades INTEGER DEFAULT 0,
+                total_pnl REAL DEFAULT 0,
+                avg_win REAL DEFAULT 0,
+                avg_loss REAL DEFAULT 0,
+                win_rate REAL DEFAULT 0,
+                sharpe_ratio REAL DEFAULT 0,
+                max_drawdown REAL DEFAULT 0,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(strategy_name, symbol)
+            )
+        ''')
