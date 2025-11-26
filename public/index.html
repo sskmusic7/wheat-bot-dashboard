@@ -356,7 +356,7 @@
             <div id="positions-tab" class="tab-content active">
                 <div class="section-header">
                     <h2 class="section-title">Open Positions</h2>
-                    <button class="btn" onclick="addPosition()">➕ Add Position</button>
+                    <button class="btn btn-primary" onclick="showBuyModal()">💰 Buy Stock</button>
                 </div>
                 <div id="positions-table">
                     <div class="loading">
@@ -529,6 +529,95 @@
         </div>
     </div>
 
+    <!-- Buy Position Modal -->
+    <div id="buyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <h2 style="margin: 0 0 20px 0; color: #667eea;">💰 Buy Stock</h2>
+            <form id="buyForm" onsubmit="submitBuy(event)">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Symbol:</label>
+                    <input type="text" id="buySymbol" placeholder="e.g., WEAT" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" autofocus>
+                    <button type="button" onclick="lookupBuyPrice()" class="btn" style="margin-top: 5px; width: 100%;">🔍 Lookup Current Price</button>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Current Price:</label>
+                    <input type="number" id="buyPrice" step="0.01" placeholder="0.00" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Quantity (Shares):</label>
+                    <input type="number" id="buyQuantity" step="0.01" placeholder="0" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" oninput="calculateBuyCost()">
+                </div>
+                <div style="margin-bottom: 15px; padding: 15px; background: #f0f4ff; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Total Cost:</span>
+                        <strong id="buyTotalCost" style="color: #667eea;">$0.00</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #666;">
+                        <span>Cash Available:</span>
+                        <span id="buyCashAvailable">Loading...</span>
+                    </div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Stop Loss (optional):</label>
+                    <input type="number" id="buyStopLoss" step="0.01" placeholder="0.00" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Take Profit (optional):</label>
+                    <input type="number" id="buyTakeProfit" step="0.01" placeholder="0.00" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">✅ Buy</button>
+                    <button type="button" onclick="hideBuyModal()" class="btn" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sell Position Modal -->
+    <div id="sellModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <h2 style="margin: 0 0 20px 0; color: #ef4444;">💸 Sell Position</h2>
+            <div id="sellPositionInfo" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <!-- Position details will be loaded here -->
+            </div>
+            <form id="sellForm" onsubmit="submitSell(event)">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Exit Price:</label>
+                    <input type="number" id="sellPrice" step="0.01" placeholder="0.00" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" oninput="calculateSellPnl()">
+                    <button type="button" onclick="lookupSellPrice()" class="btn" style="margin-top: 5px; width: 100%;">🔍 Use Current Market Price</button>
+                </div>
+                <div style="margin-bottom: 15px; padding: 15px; background: #f0f4ff; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Proceeds:</span>
+                        <strong id="sellProceeds" style="color: #667eea;">$0.00</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>P&L:</span>
+                        <strong id="sellPnl" style="color: #10b981;">$0.00</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9em;">
+                        <span>P&L %:</span>
+                        <span id="sellPnlPct" style="color: #10b981;">0.00%</span>
+                    </div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Exit Reason:</label>
+                    <select id="sellReason" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="manual">Manual Close</option>
+                        <option value="take_profit">Take Profit</option>
+                        <option value="stop_loss">Stop Loss</option>
+                        <option value="signal">Signal Change</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn" style="flex: 1; background: #ef4444; color: white;">✅ Sell</button>
+                    <button type="button" onclick="hideSellModal()" class="btn" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Wheat Bot Result Modal -->
     <div id="wheatBotModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
         <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%;">
@@ -627,7 +716,7 @@
                         html += `<td>${pos.stop_loss ? '$' + pos.stop_loss.toFixed(2) : '--'}</td>`;
                         html += `<td>${pos.take_profit ? '$' + pos.take_profit.toFixed(2) : '--'}</td>`;
                         html += `<td><span class="badge badge-${pos.source}">${pos.source}</span></td>`;
-                        html += `<td><button class="btn" onclick="closePosition(${pos.id})">Close</button></td>`;
+                        html += `<td><button class="btn" style="background: #ef4444; color: white;" onclick="showSellModal(${pos.id}, '${pos.symbol}', ${pos.quantity}, ${pos.entry_price})">💸 Sell</button></td>`;
                         html += '</tr>';
                     });
 
@@ -872,61 +961,197 @@
             }
         }
 
-        // Add position (placeholder)
-        function addPosition() {
-            const symbol = prompt('Enter symbol (e.g., WEAT):');
-            if (!symbol) return;
-
-            const quantity = prompt('Enter quantity:');
-            if (!quantity) return;
-
-            const price = prompt('Enter entry price:');
-            if (!price) return;
-
-            fetch('/api/add_position', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    symbol: symbol.toUpperCase(),
-                    quantity: parseFloat(quantity),
-                    entry_price: parseFloat(price),
-                    source: 'manual'
-                })
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    alert(result.message);
-                    refreshData();
-                } else {
-                    alert('Error: ' + result.error);
-                }
-            });
+        // Buy Modal Functions
+        let currentBuySymbol = '';
+        async function showBuyModal() {
+            document.getElementById('buyModal').style.display = 'flex';
+            document.getElementById('buyForm').reset();
+            await loadCashBalance();
         }
 
-        // Close position (placeholder)
-        function closePosition(positionId) {
-            const price = prompt('Enter exit price:');
-            if (!price) return;
+        function hideBuyModal() {
+            document.getElementById('buyModal').style.display = 'none';
+            document.getElementById('buyForm').reset();
+        }
 
-            fetch('/.netlify/functions/close_position', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    position_id: positionId,
-                    exit_price: parseFloat(price),
-                    exit_reason: 'manual'
-                })
-            })
-            .then(response => response.json())
-            .then(result => {
+        async function loadCashBalance() {
+            try {
+                const response = await fetch('/.netlify/functions/overview');
+                const result = await response.json();
                 if (result.success) {
-                    alert(result.message);
+                    document.getElementById('buyCashAvailable').textContent = 
+                        `$${result.data.cash_balance.toFixed(2)}`;
+                }
+            } catch (error) {
+                console.error('Error loading cash balance:', error);
+            }
+        }
+
+        async function lookupBuyPrice() {
+            const symbol = document.getElementById('buySymbol').value.toUpperCase();
+            if (!symbol) {
+                alert('Please enter a symbol first');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/.netlify/functions/quote/${symbol}`);
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('buyPrice').value = result.data.price.toFixed(2);
+                    currentBuySymbol = symbol;
+                    calculateBuyCost();
+                } else {
+                    alert('Symbol not found: ' + symbol);
+                }
+            } catch (error) {
+                alert('Error looking up price: ' + error.message);
+            }
+        }
+
+        function calculateBuyCost() {
+            const quantity = parseFloat(document.getElementById('buyQuantity').value) || 0;
+            const price = parseFloat(document.getElementById('buyPrice').value) || 0;
+            const total = quantity * price;
+            document.getElementById('buyTotalCost').textContent = `$${total.toFixed(2)}`;
+        }
+
+        async function submitBuy(event) {
+            event.preventDefault();
+            const symbol = document.getElementById('buySymbol').value.toUpperCase();
+            const quantity = parseFloat(document.getElementById('buyQuantity').value);
+            const entryPrice = parseFloat(document.getElementById('buyPrice').value);
+            const stopLoss = document.getElementById('buyStopLoss').value ? parseFloat(document.getElementById('buyStopLoss').value) : null;
+            const takeProfit = document.getElementById('buyTakeProfit').value ? parseFloat(document.getElementById('buyTakeProfit').value) : null;
+
+            if (!symbol || !quantity || !entryPrice) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/add_position', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        symbol: symbol,
+                        quantity: quantity,
+                        entry_price: entryPrice,
+                        source: 'manual',
+                        stop_loss: stopLoss,
+                        take_profit: takeProfit
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(`✅ Bought ${quantity} shares of ${symbol} @ $${entryPrice.toFixed(2)}`);
+                    hideBuyModal();
                     refreshData();
                 } else {
                     alert('Error: ' + result.error);
                 }
-            });
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Sell Modal Functions
+        let currentSellPosition = null;
+        async function showSellModal(positionId, symbol, quantity, entryPrice) {
+            currentSellPosition = { id: positionId, symbol, quantity, entry_price: entryPrice };
+            
+            document.getElementById('sellPositionInfo').innerHTML = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <strong>Symbol:</strong> <span>${symbol}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <strong>Quantity:</strong> <span>${quantity}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <strong>Entry Price:</strong> <span>$${entryPrice.toFixed(2)}</span>
+                </div>
+            `;
+            
+            document.getElementById('sellForm').reset();
+            document.getElementById('sellPrice').value = '';
+            await lookupSellPrice();
+            document.getElementById('sellModal').style.display = 'flex';
+        }
+
+        function hideSellModal() {
+            document.getElementById('sellModal').style.display = 'none';
+            currentSellPosition = null;
+        }
+
+        async function lookupSellPrice() {
+            if (!currentSellPosition) return;
+            
+            try {
+                const response = await fetch(`/.netlify/functions/quote/${currentSellPosition.symbol}`);
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('sellPrice').value = result.data.price.toFixed(2);
+                    calculateSellPnl();
+                }
+            } catch (error) {
+                console.error('Error looking up price:', error);
+            }
+        }
+
+        function calculateSellPnl() {
+            if (!currentSellPosition) return;
+            
+            const exitPrice = parseFloat(document.getElementById('sellPrice').value) || 0;
+            const quantity = currentSellPosition.quantity;
+            const entryPrice = currentSellPosition.entry_price;
+            
+            const proceeds = quantity * exitPrice;
+            const pnl = (exitPrice - entryPrice) * quantity;
+            const pnlPct = ((exitPrice - entryPrice) / entryPrice) * 100;
+            
+            document.getElementById('sellProceeds').textContent = `$${proceeds.toFixed(2)}`;
+            const pnlColor = pnl >= 0 ? '#10b981' : '#ef4444';
+            document.getElementById('sellPnl').style.color = pnlColor;
+            document.getElementById('sellPnl').textContent = `$${pnl.toFixed(2)}`;
+            document.getElementById('sellPnlPct').style.color = pnlColor;
+            document.getElementById('sellPnlPct').textContent = `${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%`;
+        }
+
+        async function submitSell(event) {
+            event.preventDefault();
+            if (!currentSellPosition) return;
+            
+            const exitPrice = parseFloat(document.getElementById('sellPrice').value);
+            const exitReason = document.getElementById('sellReason').value;
+
+            if (!exitPrice) {
+                alert('Please enter an exit price');
+                return;
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/close_position', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        position_id: currentSellPosition.id,
+                        exit_price: exitPrice,
+                        exit_reason: exitReason
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(`✅ Sold ${currentSellPosition.quantity} shares of ${currentSellPosition.symbol} @ $${exitPrice.toFixed(2)}\nP&L: $${result.pnl.toFixed(2)} (${result.pnl_pct.toFixed(2)}%)`);
+                    hideSellModal();
+                    refreshData();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
         }
 
         // Refresh all data
@@ -1177,28 +1402,10 @@
         }
 
         function quickAddPosition(symbol, price) {
-            const quantity = prompt(`How many shares of ${symbol} @ $${price.toFixed(2)}?`);
-            if (!quantity) return;
-
-            fetch('/api/add_position', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    symbol: symbol,
-                    quantity: parseFloat(quantity),
-                    entry_price: price,
-                    source: 'manual'
-                })
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    alert(`Added ${quantity} shares of ${symbol}!`);
-                    loadPositions();
-                } else {
-                    alert('Error: ' + result.error);
-                }
-            });
+            // Open buy modal with pre-filled values
+            document.getElementById('buySymbol').value = symbol;
+            document.getElementById('buyPrice').value = price.toFixed(2);
+            showBuyModal();
         }
 
         // Set Balance Modal
